@@ -91,6 +91,62 @@
   .awaiting-box strong { color: #1a1a1a; font-size: 12px; white-space: pre-line; }
   .awaiting-box span { font-size: 11px; }
 
+  /* ── Loading ── */
+  .loading-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex: 1;
+    border: 1px solid #e6e6ff;
+    border-radius: 10px;
+    background:
+      radial-gradient(circle at 20% 20%, #f7f7ff 0, #ffffff 52%),
+      linear-gradient(180deg, #ffffff 0%, #fcfcff 100%);
+    text-align: center;
+    padding: 18px;
+  }
+  .loading-box strong {
+    color: #1a1a1a;
+    font-size: 12px;
+    line-height: 1.45;
+    white-space: pre-line;
+  }
+  .loading-box span {
+    color: #777;
+    font-size: 11px;
+  }
+  .loading-svg {
+    width: 56px;
+    height: 56px;
+  }
+  .loading-svg .ring {
+    fill: none;
+    stroke: #ececff;
+    stroke-width: 4;
+  }
+  .loading-svg .arc {
+    fill: none;
+    stroke: #5551ff;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 65 140;
+    transform-origin: 18px 18px;
+    animation: spin 1s linear infinite, breath 1.4s ease-in-out infinite;
+  }
+  .loading-svg .dot {
+    fill: #5551ff;
+    transform-origin: 18px 18px;
+    animation: orbit 1.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes breath {
+    0%, 100% { stroke-dasharray: 55 150; stroke-opacity: .85; }
+    50% { stroke-dasharray: 90 115; stroke-opacity: 1; }
+  }
+  @keyframes orbit { to { transform: rotate(360deg); } }
+
   /* ── Error ── */
   .error-box {
     background: #fff2f2;
@@ -306,6 +362,19 @@
       </div>
     </div>
 
+    <!-- LOADING -->
+    <div id="screen-loading" class="screen">
+      <div class="loading-box">
+        <svg class="loading-svg" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle class="ring" cx="18" cy="18" r="12"></circle>
+          <circle class="arc" cx="18" cy="18" r="12"></circle>
+          <circle class="dot" cx="18" cy="6" r="1.8"></circle>
+        </svg>
+        <strong id="loading-msg">Идет расчет...</strong>
+        <span>Это может занять несколько секунд на больших выделениях</span>
+      </div>
+    </div>
+
     <!-- ERROR -->
     <div id="screen-error" class="screen">
       <div class="section-label">Ошибка</div>
@@ -470,6 +539,11 @@
       // If we're on preview page, go back first
       navBack();
       setScreen('awaiting');
+    }
+    if (msg.type === 'loading') {
+      navBack();
+      if (msg.message) document.getElementById('loading-msg').textContent = msg.message;
+      setScreen('loading');
     }
     if (msg.type === 'error') {
       navBack();
