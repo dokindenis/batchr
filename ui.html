@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    font-size: 12px;
+    color: #1a1a1a;
+    background: #fff;
+  }
+
+  /* ── Navigation container ── */
+  .nav-root {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .nav-page {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 10px;
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+    background: #fff;
+  }
+
+  /* Page states */
+  .nav-page.is-current  { transform: translateX(0); }
+  .nav-page.is-behind   { transform: translateX(-30%); }
+  .nav-page.is-ahead    { transform: translateX(100%); }
+
+  /* ── Nav header (for sub-pages) ── */
+  .nav-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 2px;
+    flex-shrink: 0;
+  }
+  .nav-back {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    color: #5551ff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 0;
+  }
+  .nav-back:hover { opacity: .7; }
+  .nav-back svg { width: 7px; height: 12px; }
+  .nav-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-left: auto;
+    margin-right: auto;
+    transform: translateX(-16px); /* visually center accounting for back btn */
+  }
+
+  /* ── Screens within page-main ── */
+  .screen { display: none; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
+  .screen.active { display: flex; }
+
+  /* ── Awaiting ── */
+  .awaiting-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex: 1;
+    border: 1.5px dashed #c7c7c7;
+    border-radius: 8px;
+    color: #888;
+    text-align: center;
+    padding: 16px;
+  }
+  .awaiting-box .icon { font-size: 20px; opacity: .4; }
+  .awaiting-box strong { color: #1a1a1a; font-size: 12px; white-space: pre-line; }
+  .awaiting-box span { font-size: 11px; }
+
+  /* ── Error ── */
+  .error-box {
+    background: #fff2f2;
+    border: 1.5px solid #ffb3b3;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #c0392b;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre-line;
+    flex: 1;
+  }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 4px;
+  }
+
+  /* ── Checkbox ── */
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .checkbox-row input[type=checkbox] {
+    width: 14px; height: 14px;
+    accent-color: #5551ff;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .checkbox-row span { font-size: 12px; color: #333; }
+  .badge-preview {
+    margin-left: auto;
+    background: #f0f0ff;
+    color: #5551ff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-family: 'SF Mono', 'Menlo', monospace;
+  }
+  .checkbox-row.secondary {
+    background: #f8f8fa;
+    border-radius: 7px;
+    padding: 8px 10px;
+  }
+  .checkbox-row.secondary span { color: #555; }
+
+  /* ── Segmented ── */
+  .segmented {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    background: #f2f2f4;
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .segmented button {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 4px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #666;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .segmented button.active {
+    background: #fff;
+    color: #1a1a1a;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1);
+  }
+
+  /* ── Preview row-link ── */
+  .preview-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f2f2f4;
+    border-radius: 7px;
+    padding: 8px 10px;
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+    transition: background .15s;
+  }
+  .preview-link:hover { background: #ebebed; }
+  .preview-link .chevron {
+    color: #c0c0c0;
+    font-size: 11px;
+  }
+
+  /* ── Preview page content ── */
+  .preview-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+  }
+  .preview-row-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: #bbb;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-top: 6px;
+  }
+  .preview-row-label:first-child { margin-top: 0; }
+  .preview-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .scale-chip {
+    background: #e8e8f0;
+    color: #5551ff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    min-width: 32px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .preview-name {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    color: #222;
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: #ebebeb; flex-shrink: 0; }
+
+  /* ── Spacer ── */
+  .spacer { flex: 1; }
+
+  /* ── Buttons ── */
+  .btn-row { display: flex; gap: 6px; flex-shrink: 0; }
+  .btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-primary  { background: #5551ff; color: #fff; }
+  .btn-secondary{ background: #f0f0f2; color: #555; }
+
+  /* ── Info row ── */
+  .info-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #666;
+    flex-wrap: wrap;
+  }
+  .size-badge {
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .size-badge.small { background: #e8f5e9; color: #2e7d32; }
+  .size-badge.big   { background: #fff3e0; color: #e65100; }
+  .size-badge.huge  { background: #fce4ec; color: #c62828; }
+  .row-count-badge {
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    background: #ede9ff;
+    color: #5551ff;
+  }
+</style>
+</head>
+<body>
+<div class="nav-root">
+
+  <!-- ══ PAGE: MAIN ══ -->
+  <div class="nav-page is-current" id="page-main">
+
+    <!-- AWAITING -->
+    <div id="screen-awaiting" class="screen active">
+      <div class="awaiting-box">
+        <div class="icon">⬡⬡⬡⬡</div>
+        <strong id="awaiting-msg">Выберите компоненты иконок&#10;(кратно 4)</strong>
+        <span>Выделите мейн-компоненты одного набора</span>
+      </div>
+    </div>
+
+    <!-- ERROR -->
+    <div id="screen-error" class="screen">
+      <div class="section-label">Ошибка</div>
+      <div id="error-text" class="error-box"></div>
+      <button class="btn btn-secondary" onclick="setScreen('awaiting')">← Назад</button>
+    </div>
+
+    <!-- READY -->
+<div id="screen-ready" class="screen">
+
+  <div>
+    <div class="section-label">Набор</div>
+    <div class="info-row">
+      <span id="widths-text"></span>
+      <span id="size-badge" class="size-badge"></span>
+      <span id="row-count-badge" class="row-count-badge"></span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div>
+    <div class="section-label">Префикс</div>
+    <label class="checkbox-row">
+      <input type="checkbox" id="prefix-check" checked onchange="updatePreview()">
+      <span>Добавить «_» (не публиковать в библиотеке)</span>
+      <span class="badge-preview" id="prefix-badge">_</span>
+    </label>
+  </div>
+
+  <div>
+    <div class="section-label">Роль иконки</div>
+    <div class="segmented" id="role-segmented">
+      <button class="active" data-value="common" onclick="selectRole(this)">Common</button>
+      <button data-value="documenteditor" onclick="selectRole(this)">Document</button>
+      <button data-value="spreadsheeteditor" onclick="selectRole(this)">Spreadsheet</button>
+      <button data-value="presentationeditor" onclick="selectRole(this)">Presentation</button>
+      <button data-value="pdfeditor" onclick="selectRole(this)">PDF</button>
+      <button data-value="visioeditor" onclick="selectRole(this)">Visio</button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <label class="checkbox-row secondary">
+    <input type="checkbox" id="svg2x-check">
+    <span>Создать 2x и SVG</span>
+  </label>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="navTo('preview')">Превью</button>
+    <button class="btn btn-primary" onclick="apply()">Применить</button>
+  </div>
+
+</div>
+  </div>
+
+  <!-- ══ PAGE: PREVIEW ══ -->
+  <div class="nav-page is-ahead" id="page-preview">
+
+    <div class="nav-header">
+      <button class="nav-back" onclick="navBack()">
+        <svg viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 1L1 6L6 11" stroke="#5551ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Назад
+      </button>
+      <span class="nav-title">Предпросмотр</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="preview-list" id="preview-list"></div>
+
+  </div>
+
+</div>
+<script>
+  const SCALES = ['1x', '1.25x', '1.5x', '1.75x'];
+  let state = { sizeLabel: 'small', rowPreviews: [], widths: [] };
+
+  /* ── Navigation ── */
+  function navTo(pageId) {
+    document.getElementById('page-main').className    = 'nav-page is-behind';
+    document.getElementById('page-' + pageId).className = 'nav-page is-current';
+  }
+
+  function navBack() {
+    document.getElementById('page-main').className    = 'nav-page is-current';
+    document.getElementById('page-preview').className = 'nav-page is-ahead';
+  }
+
+  /* ── Screens ── */
+  function setScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+  }
+
+  function selectRole(btn) {
+    document.querySelectorAll('#role-segmented button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updatePreview();
+  }
+
+  function getRole() {
+    return document.querySelector('#role-segmented button.active').dataset.value;
+  }
+
+  function buildName(scale, iconName) {
+    const prefix = document.getElementById('prefix-check').checked ? '_' : '';
+    const role = getRole();
+    const { sizeLabel } = state;
+    let name = prefix + role + '/' + scale + '/';
+    if (sizeLabel !== 'small') name += sizeLabel + '/';
+    name += 'btn-' + iconName;
+    return name;
+  }
+
+  function updatePreview() {
+    document.getElementById('prefix-badge').textContent =
+      document.getElementById('prefix-check').checked ? '_' : '—';
+
+    const list = document.getElementById('preview-list');
+    list.innerHTML = '';
+
+    state.rowPreviews.forEach((iconName, rowIdx) => {
+      if (state.rowPreviews.length > 1) {
+        const label = document.createElement('div');
+        label.className = 'preview-row-label';
+        label.textContent = 'Ряд ' + (rowIdx + 1) + ' — ' + iconName;
+        list.appendChild(label);
+      }
+      SCALES.forEach(scale => {
+        const item = document.createElement('div');
+        item.className = 'preview-item';
+        item.innerHTML = `<span class="scale-chip">${scale}</span><span class="preview-name">${buildName(scale, iconName)}</span>`;
+        list.appendChild(item);
+      });
+    });
+  }
+
+  function apply() {
+    parent.postMessage({ pluginMessage: {
+      type: 'apply',
+      prefix: document.getElementById('prefix-check').checked,
+      role: getRole(),
+      sizeLabel: state.sizeLabel,
+      create2xSvg: document.getElementById('svg2x-check').checked,
+    }}, '*');
+  }
+
+  function cancel() {
+    parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
+  }
+
+  window.onmessage = (event) => {
+    const msg = event.data.pluginMessage;
+    if (!msg) return;
+
+    if (msg.type === 'awaiting') {
+      if (msg.message) document.getElementById('awaiting-msg').textContent = msg.message;
+      // If we're on preview page, go back first
+      navBack();
+      setScreen('awaiting');
+    }
+    if (msg.type === 'error') {
+      navBack();
+      document.getElementById('error-text').textContent = msg.message;
+      setScreen('error');
+    }
+    if (msg.type === 'ready') {
+      state.sizeLabel   = msg.sizeLabel;
+      state.rowPreviews = msg.rowPreviews;
+      state.widths      = msg.widths;
+
+      document.getElementById('widths-text').textContent = msg.widths.join(' / ') + ' px';
+
+      const badge = document.getElementById('size-badge');
+      badge.textContent = msg.sizeLabel.toUpperCase();
+      badge.className = 'size-badge ' + msg.sizeLabel;
+
+      const r = msg.rowCount;
+      document.getElementById('row-count-badge').textContent =
+        r + (r === 1 ? ' ряд' : r < 5 ? ' ряда' : ' рядов');
+
+      updatePreview();
+      setScreen('ready');
+    }
+  };
+</script>
+</body>
+</html>
