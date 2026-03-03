@@ -357,8 +357,20 @@
     <div id="screen-awaiting" class="screen active">
       <div class="awaiting-box">
         <div class="icon">⬡⬡⬡⬡</div>
-        <strong id="awaiting-msg">Выберите компоненты иконок&#10;(кратно 4)</strong>
-        <span>Выделите мейн-компоненты одного набора</span>
+        <strong id="awaiting-msg">Выберите компоненты для переименования (количество должно быть кратным 4) или выберите инстансы для создания спрайтов</strong>
+        <span>Мейн-компоненты — для переименования, инстансы — для создания спрайтов</span>
+      </div>
+    </div>
+
+    <!-- SPRITES READY -->
+    <div id="screen-sprites-ready" class="screen">
+      <div class="section-label">Создание спрайтов</div>
+      <div class="awaiting-box">
+        <div class="icon">◈◈</div>
+        <strong id="sprites-ready-msg">Будет создано 0 спрайтов</strong>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="applySprites()">Применить</button>
       </div>
     </div>
 
@@ -379,7 +391,6 @@
     <div id="screen-error" class="screen">
       <div class="section-label">Ошибка</div>
       <div id="error-text" class="error-box"></div>
-      <button class="btn btn-secondary" onclick="setScreen('awaiting')">← Назад</button>
     </div>
 
     <!-- READY -->
@@ -526,6 +537,14 @@
     }}, '*');
   }
 
+  function wrapInAutolayout() {
+    parent.postMessage({ pluginMessage: { type: 'wrap' } }, '*');
+  }
+
+  function applySprites() {
+    wrapInAutolayout();
+  }
+
   function cancel() {
     parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
   }
@@ -544,6 +563,11 @@
       navBack();
       if (msg.message) document.getElementById('loading-msg').textContent = msg.message;
       setScreen('loading');
+    }
+    if (msg.type === 'sprites-ready') {
+      navBack();
+      if (msg.message) document.getElementById('sprites-ready-msg').textContent = msg.message;
+      setScreen('sprites-ready');
     }
     if (msg.type === 'error') {
       navBack();

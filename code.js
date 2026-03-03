@@ -209,7 +209,7 @@ function analyzeSelection(selection) {
   if (!allComponents) {
     return {
       ok: false,
-      message: 'Все выбранные элементы должны быть мейн-компонентами.',
+      message: 'Для переименования все выбранные элементы должны быть мейн-компонентами.\n\nДля «Создать спрайты» используйте отдельную кнопку и выделяйте инстансы (INSTANCE).',
     };
   }
 
@@ -271,6 +271,169 @@ function analyzeSelection(selection) {
   };
 }
 
+function runWrapInAutolayout() {
+  const selection = Array.from(figma.currentPage.selection);
+
+  if (selection.length === 0) {
+    figma.notify('Для «Создать спрайты» выбери хотя бы один инстанс', { error: true });
+    return;
+  }
+
+  if (!selection.every(node => node.type === 'INSTANCE')) {
+    figma.notify('«Создать спрайты» работает только с инстансами (INSTANCE)', { error: true });
+    return;
+  }
+
+  const collections = figma.variables.getLocalVariableCollections();
+  const iconsCollection = collections.find(collection => collection.name === 'icons');
+  const darkMode = iconsCollection
+    ? iconsCollection.modes.find(mode => mode.name === 'Dark')
+    : null;
+
+  if (!iconsCollection || !darkMode) {
+    figma.notify('⚠️ Коллекция «icons» или мод «Dark» не найдены', { error: true });
+    return;
+  }
+
+  const frames = [];
+  let skipped = 0;
+
+  for (const node of selection) {
+    const parent = node.parent;
+    if (!parent || !('children' in parent)) {
+      skipped += 1;
+      continue;
+    }
+
+    const index = parent.children.indexOf(node);
+    if (index === -1) {
+      skipped += 1;
+      continue;
+    }
+
+    try {
+      const frame = figma.createFrame();
+      frame.name = node.name;
+      frame.layoutMode = 'HORIZONTAL';
+      frame.primaryAxisSizingMode = 'AUTO';
+      frame.counterAxisSizingMode = 'AUTO';
+      frame.paddingTop = 0;
+      frame.paddingBottom = 0;
+      frame.paddingLeft = 0;
+      frame.paddingRight = 0;
+      frame.itemSpacing = 0;
+      frame.fills = [];
+
+      parent.insertChild(index, frame);
+      frame.x = node.x;
+      frame.y = node.y;
+      frame.appendChild(node);
+
+      if ('layoutAlign' in node) node.layoutAlign = 'INHERIT';
+      if ('layoutGrow' in node) node.layoutGrow = 0;
+
+      frames.push(frame);
+    } catch (e) {
+      skipped += 1;
+    }
+  }
+
+  if (frames.length === 0) {
+    figma.notify('Не удалось обернуть выбранные элементы', { error: true });
+    return;
+  }
+
+  for (const frame of frames) {
+    const original = frame.children[0];
+    if (!original || !('clone' in original)) continue;
+
+    const clone = original.clone();
+    frame.appendChild(clone);
+    if ('layoutAlign' in clone) clone.layoutAlign = 'INHERIT';
+    if ('layoutGrow' in clone) clone.layoutGrow = 0;
+
+    try {
+      clone.setExplicitVariableModeForCollection(iconsCollection.id, darkMode.modeId);
+    } catch (e) {
+      // If a node can't take explicit variable mode, keep going.
+    }
+  }
+
+  const framesByParent = new Map();
+  for (const frame of frames) {
+    const parent = frame.parent;
+    if (!parent) continue;
+    if (!framesByParent.has(parent)) framesByParent.set(parent, []);
+    framesByParent.get(parent).push(frame);
+  }
+
+  for (const group of framesByParent.values()) {
+    const frameGeometries = group.map(frame => ({
+      node: frame,
+      x: frame.x,
+      y: frame.y,
+      width: frame.width,
+      height: frame.height,
+    }));
+
+    const rows = groupIntoRows(frameGeometries);
+    for (const row of rows) {
+      const framesInRow = row.map(item => item.node);
+      if (framesInRow.length === 0) continue;
+
+      let currentX = framesInRow[0].x;
+      for (const frame of framesInRow) {
+        frame.x = currentX;
+        currentX += frame.width + GAP;
+      }
+    }
+  }
+
+  const components = [];
+  for (const frame of frames) {
+    try {
+      const savedName = frame.name;
+      const savedX = frame.x;
+      const savedY = frame.y;
+      const component = figma.createComponentFromNode(frame);
+      component.name = savedName;
+      component.x = savedX;
+      component.y = savedY;
+      components.push(component);
+    } catch (e) {
+      skipped += 1;
+    }
+  }
+
+  if (components.length === 0) {
+    figma.notify('Не удалось создать компоненты после создания спрайтов', { error: true });
+    return;
+  }
+
+  figma.viewport.scrollAndZoomIntoView(components);
+  figma.currentPage.selection = [];
+  clearDerivedCaches();
+  scheduleValidate();
+
+  const created = components.length;
+  if (skipped > 0) {
+    figma.notify(
+      `✅ Спрайты созданы: ${created} ${created === 1 ? 'компонент' : created < 5 ? 'компонента' : 'компонентов'}, пропущено ${skipped}`,
+    );
+    return;
+  }
+
+  figma.notify(
+    `✅ Спрайты созданы: ${created} ${created === 1 ? 'компонент' : created < 5 ? 'компонента' : 'компонентов'}`,
+  );
+}
+
+function spriteWord(count) {
+  if (count % 10 === 1 && count % 100 !== 11) return 'спрайт';
+  if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) return 'спрайта';
+  return 'спрайтов';
+}
+
 // ─── Plugin entry ─────────────────────────────────────────────────────────────
 figma.showUI(__html__, { width: 380, height: 300, title: 'Batch Icon Components' });
 
@@ -283,13 +446,30 @@ function validate() {
 
   const selection = figma.currentPage.selection;
 
-  if (selection.length === 0 || selection.length % 4 !== 0) {
+  if (selection.length === 0) {
     resetSelectionCache(selection);
     postUiMessageDedup({
       type: 'awaiting',
-      message: selection.length === 0
-        ? 'Выберите компоненты иконок\n(кратно 4)'
-        : `Выбрано ${selection.length} — число должно быть кратно 4`,
+      message: 'Выберите компоненты для переименования (количество должно быть кратным 4) или выберите инстансы для создания спрайтов',
+    });
+    return;
+  }
+
+  if (selection.every(node => node.type === 'INSTANCE')) {
+    resetSelectionCache(selection);
+    postUiMessageDedup({
+      type: 'sprites-ready',
+      message: `Будет создано ${selection.length} ${spriteWord(selection.length)}`,
+      count: selection.length,
+    });
+    return;
+  }
+
+  if (selection.length % 4 !== 0) {
+    resetSelectionCache(selection);
+    postUiMessageDedup({
+      type: 'awaiting',
+      message: `Выбрано ${selection.length} — число должно быть кратно 4`,
     });
     return;
   }
@@ -298,7 +478,7 @@ function validate() {
     resetSelectionCache(selection);
     postUiMessageDedup({
       type: 'error',
-      message: 'Все выбранные элементы должны быть мейн-компонентами.',
+      message: 'Для переименования все выбранные элементы должны быть мейн-компонентами.\n\nДля «Создать спрайты» используйте отдельную кнопку и выделяйте инстансы (INSTANCE).',
     });
     return;
   }
@@ -378,6 +558,11 @@ figma.on('currentpagechange', () => {
 validate();
 
 figma.ui.onmessage = async (msg) => {
+  if (msg.type === 'wrap') {
+    runWrapInAutolayout();
+    return;
+  }
+
   if (msg.type === 'apply') {
     const { prefix, role, create2xSvg } = msg;
     const selection = figma.currentPage.selection;
