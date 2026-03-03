@@ -435,7 +435,7 @@ function spriteWord(count) {
 }
 
 // ─── Plugin entry ─────────────────────────────────────────────────────────────
-figma.showUI(__html__, { width: 380, height: 300, title: 'Batch Icon Components' });
+figma.showUI(__html__, { width: 380, height: 300, title: 'Batchr' });
 
 function validate() {
   const runId = ++validateRunId;
