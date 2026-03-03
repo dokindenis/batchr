@@ -185,16 +185,6 @@
     flex-shrink: 0;
   }
   .checkbox-row span { font-size: 12px; color: #333; }
-  .badge-preview {
-    margin-left: auto;
-    background: #f0f0ff;
-    color: #5551ff;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 1px 7px;
-    border-radius: 20px;
-    font-family: 'SF Mono', 'Menlo', monospace;
-  }
   .checkbox-row.secondary {
     background: #f8f8fa;
     border-radius: 7px;
@@ -357,8 +347,8 @@
     <div id="screen-awaiting" class="screen active">
       <div class="awaiting-box">
         <div class="icon">⬡⬡⬡⬡</div>
-        <strong id="awaiting-msg">Выберите компоненты для переименования (количество должно быть кратным 4) или выберите инстансы для создания спрайтов</strong>
-        <span>Мейн-компоненты — для переименования, инстансы — для создания спрайтов</span>
+        <strong id="awaiting-msg">Ничего не выбрано.</strong>
+        <span>Выделите компоненты для переименования или инстансы для создания спрайтов</span>
       </div>
     </div>
 
@@ -370,7 +360,7 @@
         <strong id="sprites-ready-msg">Будет создано 0 спрайтов</strong>
       </div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="applySprites()">Применить</button>
+        <button class="btn btn-primary" onclick="applySprites()">Создать</button>
       </div>
     </div>
 
@@ -397,7 +387,7 @@
 <div id="screen-ready" class="screen">
 
   <div>
-    <div class="section-label">Набор</div>
+    <div class="section-label">Размеры</div>
     <div class="info-row">
       <span id="widths-text"></span>
       <span id="size-badge" class="size-badge"></span>
@@ -407,17 +397,16 @@
 
   <div class="divider"></div>
 
-  <div>
-    <div class="section-label">Префикс</div>
-    <label class="checkbox-row">
-      <input type="checkbox" id="prefix-check" checked onchange="updatePreview()">
-      <span>Добавить «_» (не публиковать в библиотеке)</span>
-      <span class="badge-preview" id="prefix-badge">_</span>
-    </label>
-  </div>
+    <div>
+      <div class="section-label">Префикс</div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="prefix-check" checked onchange="updatePreview()">
+      <span>Добавить символ «_»</span>
+      </label>
+    </div>
 
   <div>
-    <div class="section-label">Роль иконки</div>
+    <div class="section-label">Назначение</div>
     <div class="segmented" id="role-segmented">
       <button class="active" data-value="common" onclick="selectRole(this)">Common</button>
       <button data-value="documenteditor" onclick="selectRole(this)">Document</button>
@@ -432,7 +421,7 @@
 
   <label class="checkbox-row secondary">
     <input type="checkbox" id="svg2x-check">
-    <span>Создать 2x и SVG</span>
+    <span>Создать компоненты @2x и SVG</span>
   </label>
 
   <div class="btn-row">
@@ -505,9 +494,6 @@
   }
 
   function updatePreview() {
-    document.getElementById('prefix-badge').textContent =
-      document.getElementById('prefix-check').checked ? '_' : '—';
-
     const list = document.getElementById('preview-list');
     list.innerHTML = '';
 

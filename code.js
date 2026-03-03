@@ -450,7 +450,7 @@ function validate() {
     resetSelectionCache(selection);
     postUiMessageDedup({
       type: 'awaiting',
-      message: 'Выберите компоненты для переименования (количество должно быть кратным 4) или выберите инстансы для создания спрайтов',
+      message: 'Ничего не выбрано.',
     });
     return;
   }
