@@ -336,6 +336,46 @@
     background: #ede9ff;
     color: #5551ff;
   }
+
+  /* ── Theme selector ── */
+  .theme-select {
+    width: 100%;
+    padding: 8px 30px 8px 10px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 7px;
+    font-size: 12px;
+    font-family: inherit;
+    color: #1a1a1a;
+    background-color: #f8f8fa;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+  .theme-select:focus { outline: none; border-color: #5551ff; }
+
+  /* ── Custom theme fields ── */
+  .custom-fields {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .text-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 7px;
+    font-size: 12px;
+    font-family: inherit;
+    color: #1a1a1a;
+    background: #f8f8fa;
+    outline: none;
+  }
+  .text-input:focus { border-color: #5551ff; }
 </style>
 </head>
 <body>
@@ -367,6 +407,24 @@
           </svg>
         </div>
         <strong id="sprites-ready-msg">Будет создано 0 спрайтов</strong>
+      </div>
+      <div>
+        <div class="section-label">Тема</div>
+        <select id="theme-select" class="theme-select" onchange="onThemeChange()">
+          <option value="old">Старый набор (icons → Dark)</option>
+          <option value="modern">Modern набор (Theme → Modern Dark)</option>
+          <option value="custom">Указать свой...</option>
+        </select>
+        <div id="custom-theme-fields" class="custom-fields">
+          <div>
+            <div class="section-label">Коллекция</div>
+            <input type="text" id="custom-collection" class="text-input" placeholder="Название коллекции">
+          </div>
+          <div>
+            <div class="section-label">Режим</div>
+            <input type="text" id="custom-mode" class="text-input" placeholder="Название режима">
+          </div>
+        </div>
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="applySprites()">Создать</button>
@@ -532,12 +590,28 @@
     }}, '*');
   }
 
-  function wrapInAutolayout() {
-    parent.postMessage({ pluginMessage: { type: 'wrap' } }, '*');
+  function onThemeChange() {
+    const val = document.getElementById('theme-select').value;
+    const fields = document.getElementById('custom-theme-fields');
+    fields.style.display = val === 'custom' ? 'flex' : 'none';
   }
 
   function applySprites() {
-    wrapInAutolayout();
+    const theme = document.getElementById('theme-select').value;
+    let collectionName, modeName;
+
+    if (theme === 'old') {
+      collectionName = 'icons';
+      modeName = 'Dark';
+    } else if (theme === 'modern') {
+      collectionName = 'Theme';
+      modeName = 'Modern Dark';
+    } else {
+      collectionName = document.getElementById('custom-collection').value.trim();
+      modeName = document.getElementById('custom-mode').value.trim();
+    }
+
+    parent.postMessage({ pluginMessage: { type: 'wrap', collectionName, modeName } }, '*');
   }
 
   function cancel() {

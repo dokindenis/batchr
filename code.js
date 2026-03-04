@@ -271,7 +271,7 @@ function analyzeSelection(selection) {
   };
 }
 
-function runWrapInAutolayout() {
+function runWrapInAutolayout(collectionName, modeName) {
   const selection = Array.from(figma.currentPage.selection);
 
   if (selection.length === 0) {
@@ -284,14 +284,48 @@ function runWrapInAutolayout() {
     return;
   }
 
+  if (!collectionName || !modeName) {
+    figma.notify('⚠️ Укажите название коллекции и режима', { error: true });
+    return;
+  }
+
+  // Search local collections first, then imported (library) ones via bound variables
   const collections = figma.variables.getLocalVariableCollections();
-  const iconsCollection = collections.find(collection => collection.name === 'icons');
+  let iconsCollection = collections.find(c => c.name === collectionName);
+
+  if (!iconsCollection) {
+    const seenIds = new Set();
+    const stack = [...selection];
+    while (stack.length > 0 && !iconsCollection) {
+      const node = stack.pop();
+      if (node.boundVariables) {
+        for (const bindings of Object.values(node.boundVariables)) {
+          const list = Array.isArray(bindings) ? bindings : [bindings];
+          for (const b of list) {
+            if (!b || !b.id || seenIds.has(b.id)) continue;
+            seenIds.add(b.id);
+            const v = figma.variables.getVariableById(b.id);
+            if (!v) continue;
+            if (seenIds.has(v.variableCollectionId)) continue;
+            seenIds.add(v.variableCollectionId);
+            const col = figma.variables.getVariableCollectionById(v.variableCollectionId);
+            if (col && col.name === collectionName) { iconsCollection = col; break; }
+          }
+          if (iconsCollection) break;
+        }
+      }
+      if (!iconsCollection && 'children' in node) {
+        for (const child of node.children) stack.push(child);
+      }
+    }
+  }
+
   const darkMode = iconsCollection
-    ? iconsCollection.modes.find(mode => mode.name === 'Dark')
+    ? iconsCollection.modes.find(mode => mode.name === modeName)
     : null;
 
   if (!iconsCollection || !darkMode) {
-    figma.notify('⚠️ Коллекция «icons» или мод «Dark» не найдены', { error: true });
+    figma.notify(`⚠️ Коллекция «${collectionName}» или мод «${modeName}» не найдены`, { error: true });
     return;
   }
 
@@ -559,7 +593,7 @@ validate();
 
 figma.ui.onmessage = async (msg) => {
   if (msg.type === 'wrap') {
-    runWrapInAutolayout();
+    runWrapInAutolayout(msg.collectionName, msg.modeName);
     return;
   }
 
