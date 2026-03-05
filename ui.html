@@ -171,27 +171,39 @@
     margin-bottom: 4px;
   }
 
-  /* ── Checkbox ── */
-  .checkbox-row {
+  /* ── Toggle ── */
+  .toggle-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
     cursor: pointer;
     user-select: none;
   }
-  .checkbox-row input[type=checkbox] {
-    width: 14px; height: 14px;
-    accent-color: #5551ff;
-    cursor: pointer;
+  .toggle-row span { font-size: 12px; color: #333; }
+  .toggle-row input { display: none; }
+  .toggle-track {
+    width: 34px; height: 20px;
+    background: #ccc;
+    border-radius: 10px;
+    position: relative;
+    transition: background .2s;
     flex-shrink: 0;
   }
-  .checkbox-row span { font-size: 12px; color: #333; }
-  .checkbox-row.secondary {
-    background: #f8f8fa;
-    border-radius: 7px;
-    padding: 8px 10px;
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .2s;
   }
-  .checkbox-row.secondary span { color: #555; }
+  .toggle-row input:checked + .toggle-track {
+    background: #5551ff;
+  }
+  .toggle-row input:checked + .toggle-track::after {
+    transform: translateX(14px);
+  }
 
   /* ── Segmented ── */
   .segmented {
@@ -314,7 +326,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: 13px;
     color: #666;
     flex-wrap: wrap;
   }
@@ -392,38 +404,23 @@
             <path d="M22.663 50h1.334c1.093 0 2-.907 2-2 0-1.094-.907-2-2-2h-1.334c-1.093 0-2 .906-2 2s.907 2 2 2M3.33 41.333C3.33 46.106 7.223 50 11.997 50c1.093 0 2-.907 2-2 0-1.094-.907-2-2-2-2.56 0-4.667-2.107-4.667-4.667 0-1.093-.907-2-2-2s-2 .907-2 2m0-10.667c0 1.094.907 2 2 2s2-.906 2-2v-8c0-1.093-.907-2-2-2s-2 .907-2 2zM45.997 24c0 1.093.906 2 2 2s2-.907 2-2v-1.334c0-1.093-.907-2-2-2-1.094 0-2 .907-2 2zm0-12c0 1.093.906 2 2 2s2-.907 2-2c0-4.774-3.894-8.667-8.667-8.667-1.093 0-2 .907-2 2s.907 2 2 2c2.56 0 4.667 2.107 4.667 4.667M3.33 12c0 1.093.907 2 2 2s2-.907 2-2c0-2.56 2.107-4.667 4.666-4.667 1.094 0 2-.907 2-2s-.906-2-2-2C7.224 3.333 3.33 7.226 3.33 12m19.333-4.667h8c1.094 0 2-.907 2-2s-.906-2-2-2h-8c-1.093 0-2 .907-2 2s.907 2 2 2m9.326 43.13c2.663 6.75 4.025 10.204 7.18 10.204v-.054h.24c3.357-.184 4.356-3.827 6.347-11.082l.054-.197c.373-1.414.64-2.347.933-2.64.27-.27 1.084-.496 2.336-.842l.33-.092c7.36-2 11.067-3.013 11.254-6.373s-3.36-4.747-10.453-7.52L39.49 27.68c-7.28-2.853-10.96-4.267-13.494-1.707-2.57 2.544-1.165 6.14 1.651 13.35l.056.144 4.24 10.88zM29.41 28.64c1.506.017 5.095 1.414 8.559 2.763l.027.01 10.747 4.214.08.03c3.415 1.324 6.886 2.67 7.707 3.517-.903.742-4.575 1.749-8.157 2.73l-.057.016-.08.022c-2.059.574-3.32.925-4.346 1.952-1.033 1.032-1.382 2.301-1.961 4.408l-.013.045c-.986 3.6-2 7.28-2.747 8.213-.786-.787-2.055-3.987-3.371-7.305l-.202-.508-4.213-10.827-.065-.167c-1.656-4.258-3.206-8.242-2.495-8.953.104-.103.308-.157.587-.16" fill="#5651ff"/>
           </svg>
         </div>
-        <strong id="awaiting-msg">Ничего не выбрано.</strong>
+        <strong id="awaiting-msg" style="font-size:14px;">Ничего не выбрано.</strong>
         <span>Выделите компоненты для переименования или инстансы для создания спрайтов</span>
       </div>
     </div>
 
     <!-- SPRITES READY -->
     <div id="screen-sprites-ready" class="screen">
-      <div class="section-label">Создание спрайтов</div>
       <div class="awaiting-box">
         <div class="state-icon" aria-hidden="true">
           <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M17.512 13c1.048-.928 2.264-1.667 3.821-1.667s2.774.739 3.822 1.666c.984.87 2.056 2.126 3.304 3.585l6.322 7.405c1.315 1.538 2.422 2.837 3.184 3.997.81 1.23 1.368 2.507 1.368 4.014 0 1.506-.557 2.783-1.368 4.013-.762 1.16-1.87 2.459-3.184 3.997l-6.322 7.406c-1.248 1.458-2.32 2.714-3.304 3.584-1.048.928-2.264 1.666-3.822 1.666-1.557 0-2.773-.738-3.821-1.666-.984-.87-2.056-2.126-3.304-3.584L7.885 40.01c-1.314-1.538-2.421-2.837-3.184-3.997-.81-1.23-1.368-2.507-1.368-4.013 0-1.507.558-2.785 1.368-4.014.763-1.16 1.87-2.459 3.184-3.997l6.232-7.296.09-.11c1.249-1.458 2.32-2.714 3.305-3.583m2.65 2.994c-.749.664-1.637 1.696-3.002 3.296l-6.15 7.2c-1.418 1.662-2.36 2.768-2.967 3.69-.576.878-.71 1.385-.71 1.82 0 .434.134.94.71 1.818.608.923 1.549 2.03 2.968 3.69l6.149 7.2c1.365 1.6 2.253 2.633 3.003 3.294.706.627 1.01.664 1.17.664s.464-.037 1.17-.664c.75-.661 1.638-1.693 3.006-3.293l6.147-7.2c1.419-1.662 2.36-2.768 2.968-3.69.576-.878.71-1.385.71-1.82 0-.434-.134-.94-.71-1.818-.608-.923-1.55-2.03-2.968-3.69l-6.147-7.2c-1.368-1.6-2.256-2.633-3.005-3.297-.707-.624-1.01-.661-1.17-.661s-.465.037-1.171.661M33.42 11.77a2 2 0 0 1 2.81.315l9.44 11.819c1.259 1.576 2.315 2.898 3.043 4.08.77 1.253 1.288 2.525 1.288 4.015 0 1.491-.517 2.763-1.288 4.017-.728 1.18-1.784 2.504-3.043 4.08l-9.44 11.818a2 2 0 0 1-3.125-2.496l9.365-11.725c1.355-1.696 2.254-2.827 2.835-3.773.552-.897.696-1.438.696-1.92 0-.483-.144-1.024-.696-1.92-.581-.947-1.48-2.078-2.835-3.774l-9.365-11.725a2 2 0 0 1 .315-2.81m13.477.315 9.44 11.819c1.259 1.576 2.315 2.898 3.043 4.08.77 1.253 1.288 2.525 1.288 4.015 0 1.491-.518 2.763-1.288 4.017-.728 1.18-1.784 2.504-3.043 4.08l-9.44 11.818a2 2 0 0 1-3.125-2.496l9.365-11.725c1.355-1.696 2.253-2.827 2.835-3.773.552-.897.696-1.438.696-1.92 0-.483-.144-1.024-.696-1.92-.582-.947-1.48-2.078-2.835-3.774L43.77 14.581a2 2 0 0 1 3.125-2.496" fill="#5651ff"/>
           </svg>
         </div>
-        <strong id="sprites-ready-msg">Будет создано 0 спрайтов</strong>
-      </div>
-      <div>
-        <div class="section-label">Тема</div>
-        <select id="theme-select" class="theme-select" onchange="onThemeChange()">
-          <option value="old">Старый набор (icons → Dark)</option>
-          <option value="modern">Modern набор (Theme → Modern Dark)</option>
-          <option value="custom">Указать свой...</option>
-        </select>
-        <div id="custom-theme-fields" class="custom-fields">
-          <div>
-            <div class="section-label">Коллекция</div>
-            <input type="text" id="custom-collection" class="text-input" placeholder="Название коллекции">
-          </div>
-          <div>
-            <div class="section-label">Режим</div>
-            <input type="text" id="custom-mode" class="text-input" placeholder="Название режима">
-          </div>
+        <strong style="font-size:14px;">Создание спрайтов</strong>
+        <div style="display:flex; gap:6px;">
+          <span id="sprites-count-badge" class="row-count-badge"></span>
+          <span id="sprites-size-badge" class="size-badge"></span>
         </div>
       </div>
       <div class="btn-row">
@@ -452,50 +449,38 @@
 
     <!-- READY -->
 <div id="screen-ready" class="screen">
-
-  <div>
-    <div class="section-label">Размеры</div>
-    <div class="info-row">
-      <span id="widths-text"></span>
-      <span id="size-badge" class="size-badge"></span>
+  <div class="awaiting-box">
+    <div class="state-icon" aria-hidden="true">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M45.334 6a2 2 0 0 1 0 4A3.334 3.334 0 0 0 42 13.333v37.334A3.334 3.334 0 0 0 45.334 54a2 2 0 0 1 0 4A7.3 7.3 0 0 1 40 55.697 7.3 7.3 0 0 1 34.667 58a2 2 0 1 1 0-4A3.333 3.333 0 0 0 38 50.667V13.333A3.333 3.333 0 0 0 34.667 10a2 2 0 1 1 0-4A7.3 7.3 0 0 1 40 8.302 7.3 7.3 0 0 1 45.334 6" fill="#5651ff"/>
+        <path d="M32 14a2 2 0 0 1 0 4H21.333c-3.828 0-6.497.005-8.512.275-1.956.264-2.992.745-3.73 1.483s-1.22 1.774-1.483 3.73c-.27 2.015-.275 4.684-.275 8.512s.005 6.498.275 8.512c.263 1.956.745 2.992 1.483 3.73s1.774 1.22 3.73 1.483c2.015.27 4.684.275 8.512.275H32a2 2 0 0 1 0 4H21.333c-3.715 0-6.702.004-9.045-.31-2.4-.323-4.421-1.014-6.026-2.619s-2.296-3.626-2.618-6.026c-.315-2.343-.311-5.33-.311-9.045s-.004-6.702.31-9.045c.323-2.4 1.014-4.421 2.619-6.026s3.626-2.296 6.026-2.618c2.343-.315 5.33-.311 9.045-.311zm16.06.047c4.112.124 7.352.557 9.677 2.882 1.605 1.605 2.296 3.626 2.618 6.026.316 2.343.311 5.33.311 9.045s.005 6.702-.31 9.045c-.323 2.4-1.014 4.421-2.619 6.026-2.325 2.325-5.565 2.758-9.677 2.882a2 2 0 0 1-.12-3.998c4.172-.126 5.874-.618 6.97-1.713.737-.738 1.219-1.774 1.482-3.73.27-2.014.274-4.684.274-8.512s-.004-6.497-.274-8.512c-.263-1.956-.745-2.992-1.483-3.73-1.095-1.095-2.797-1.587-6.97-1.713a2 2 0 0 1 .12-3.998" fill="#5651ff"/>
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M18.666 22a3.39 3.39 0 0 1 3.19 2.242l.084.274 3.993 14.968a2.001 2.001 0 0 1-3.866 1.032l-1.026-3.849h-4.749l-1.026 3.849a2 2 0 0 1-3.866-1.032l3.993-14.968A3.39 3.39 0 0 1 18.666 22m-1.308 10.667h2.617l-1.309-4.906z" fill="#5651ff"/>
+      </svg>
+    </div>
+    <strong id="widths-text" style="font-size:14px;"></strong>
+    <div style="display:flex; gap:6px;">
       <span id="row-count-badge" class="row-count-badge"></span>
+      <span id="size-badge" class="size-badge"></span>
     </div>
   </div>
-
-  <div class="divider"></div>
-
-    <div>
-      <div class="section-label">Префикс</div>
-      <label class="checkbox-row">
+  <div style="padding:8px 0;">
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <label class="toggle-row">
+        <span>Создать компоненты @2x и SVG</span>
+        <input type="checkbox" id="svg2x-check">
+        <div class="toggle-track"></div>
+      </label>
+      <label class="toggle-row">
+        <span>Исключить из публикации</span>
         <input type="checkbox" id="prefix-check" checked onchange="updatePreview()">
-      <span>Добавить символ «_»</span>
+        <div class="toggle-track"></div>
       </label>
     </div>
-
-  <div>
-    <div class="section-label">Назначение</div>
-    <div class="segmented" id="role-segmented">
-      <button class="active" data-value="common" onclick="selectRole(this)">Common</button>
-      <button data-value="documenteditor" onclick="selectRole(this)">Document</button>
-      <button data-value="spreadsheeteditor" onclick="selectRole(this)">Spreadsheet</button>
-      <button data-value="presentationeditor" onclick="selectRole(this)">Presentation</button>
-      <button data-value="pdfeditor" onclick="selectRole(this)">PDF</button>
-      <button data-value="visioeditor" onclick="selectRole(this)">Visio</button>
-    </div>
   </div>
-
-  <div class="divider"></div>
-
-  <label class="checkbox-row secondary">
-    <input type="checkbox" id="svg2x-check">
-    <span>Создать компоненты @2x и SVG</span>
-  </label>
-
   <div class="btn-row">
     <button class="btn btn-secondary" onclick="navTo('preview')">Превью</button>
     <button class="btn btn-primary" onclick="apply()">Применить</button>
   </div>
-
 </div>
   </div>
 
@@ -521,7 +506,7 @@
 </div>
 <script>
   const SCALES = ['1x', '1.25x', '1.5x', '1.75x'];
-  let state = { sizeLabel: 'small', rowPreviews: [], widths: [] };
+  let state = { sizeLabel: 'small', rowPreviews: [], widths: [], role: 'common' };
 
   /* ── Navigation ── */
   function navTo(pageId) {
@@ -540,20 +525,13 @@
     document.getElementById('screen-' + name).classList.add('active');
   }
 
-  function selectRole(btn) {
-    document.querySelectorAll('#role-segmented button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    updatePreview();
-  }
-
-  function getRole() {
-    return document.querySelector('#role-segmented button.active').dataset.value;
+  function pageNameToRole(pageName) {
+    return pageName.trim();
   }
 
   function buildName(scale, iconName) {
     const prefix = document.getElementById('prefix-check').checked ? '_' : '';
-    const role = getRole();
-    const { sizeLabel } = state;
+    const { sizeLabel, role } = state;
     let name = prefix + role + '/' + scale + '/';
     if (sizeLabel !== 'small') name += sizeLabel + '/';
     name += 'btn-' + iconName;
@@ -584,34 +562,14 @@
     parent.postMessage({ pluginMessage: {
       type: 'apply',
       prefix: document.getElementById('prefix-check').checked,
-      role: getRole(),
+      role: state.role,
       sizeLabel: state.sizeLabel,
       create2xSvg: document.getElementById('svg2x-check').checked,
     }}, '*');
   }
 
-  function onThemeChange() {
-    const val = document.getElementById('theme-select').value;
-    const fields = document.getElementById('custom-theme-fields');
-    fields.style.display = val === 'custom' ? 'flex' : 'none';
-  }
-
   function applySprites() {
-    const theme = document.getElementById('theme-select').value;
-    let collectionName, modeName;
-
-    if (theme === 'old') {
-      collectionName = 'icons';
-      modeName = 'Dark';
-    } else if (theme === 'modern') {
-      collectionName = 'Theme';
-      modeName = 'Modern Dark';
-    } else {
-      collectionName = document.getElementById('custom-collection').value.trim();
-      modeName = document.getElementById('custom-mode').value.trim();
-    }
-
-    parent.postMessage({ pluginMessage: { type: 'wrap', collectionName, modeName } }, '*');
+    parent.postMessage({ pluginMessage: { type: 'wrap' } }, '*');
   }
 
   function cancel() {
@@ -635,7 +593,17 @@
     }
     if (msg.type === 'sprites-ready') {
       navBack();
-      if (msg.message) document.getElementById('sprites-ready-msg').textContent = msg.message;
+      const c = msg.count || 0;
+      const r = msg.rowCount || 0;
+      const spriteWord = c === 1 ? 'СПРАЙТ' : c < 5 ? 'СПРАЙТА' : 'СПРАЙТОВ';
+      const setWord = r === 1 ? 'НАБОР' : r < 5 ? 'НАБОРА' : 'НАБОРОВ';
+      document.getElementById('sprites-count-badge').textContent =
+        c + ' ' + spriteWord + ' / ' + r + ' ' + setWord;
+
+      const sizeBadge = document.getElementById('sprites-size-badge');
+      const sizeText = msg.sizeLabel === 'small' ? 'REGULAR' : (msg.sizeLabel || '').toUpperCase();
+      sizeBadge.textContent = sizeText;
+      sizeBadge.className = 'size-badge ' + (msg.sizeLabel || '');
       setScreen('sprites-ready');
     }
     if (msg.type === 'error') {
@@ -647,16 +615,21 @@
       state.sizeLabel   = msg.sizeLabel;
       state.rowPreviews = msg.rowPreviews;
       state.widths      = msg.widths;
+      state.role        = pageNameToRole(msg.pageName || 'common');
 
-      document.getElementById('widths-text').textContent = msg.widths.join(' / ') + ' px';
+      document.getElementById('widths-text').textContent = 'Переименование';
 
       const badge = document.getElementById('size-badge');
-      badge.textContent = msg.sizeLabel.toUpperCase();
+      const sizeText = msg.sizeLabel === 'small' ? 'REGULAR' : msg.sizeLabel.toUpperCase();
+      badge.textContent = sizeText;
       badge.className = 'size-badge ' + msg.sizeLabel;
 
+      const iconCount = msg.rowCount * 4;
       const r = msg.rowCount;
+      const iconWord = iconCount === 1 ? 'ИКОНКА' : iconCount < 5 ? 'ИКОНКИ' : 'ИКОНОК';
+      const setWord = r === 1 ? 'НАБОР' : r < 5 ? 'НАБОРА' : 'НАБОРОВ';
       document.getElementById('row-count-badge').textContent =
-        r + (r === 1 ? ' ряд' : r < 5 ? ' ряда' : ' рядов');
+        iconCount + ' ' + iconWord + ' / ' + r + ' ' + setWord;
 
       updatePreview();
       setScreen('ready');

@@ -205,11 +205,11 @@ function matchSizeSet(widths) {
 }
 
 function analyzeSelection(selection) {
-  const allComponents = selection.every(node => node.type === 'COMPONENT');
-  if (!allComponents) {
+  const allValid = selection.every(node => node.type === 'COMPONENT' || node.type === 'FRAME');
+  if (!allValid) {
     return {
       ok: false,
-      message: 'Для переименования все выбранные элементы должны быть мейн-компонентами.\n\nДля «Создать спрайты» используйте отдельную кнопку и выделяйте инстансы (INSTANCE).',
+      message: 'Для переименования все выбранные элементы должны быть компонентами или фреймами.\n\nДля «Создать спрайты» используйте отдельную кнопку и выделяйте инстансы (INSTANCE).',
     };
   }
 
@@ -271,7 +271,7 @@ function analyzeSelection(selection) {
   };
 }
 
-function runWrapInAutolayout(collectionName, modeName) {
+function runWrapInAutolayout() {
   const selection = Array.from(figma.currentPage.selection);
 
   if (selection.length === 0) {
@@ -284,50 +284,59 @@ function runWrapInAutolayout(collectionName, modeName) {
     return;
   }
 
-  if (!collectionName || !modeName) {
-    figma.notify('⚠️ Укажите название коллекции и режима', { error: true });
-    return;
-  }
+  // Auto-detect variable collection and dark mode from selected instances
+  const seenCollectionIds = new Set();
+  const detectedCollections = [];
+  const stack = [...selection];
 
-  // Search local collections first, then imported (library) ones via bound variables
-  const collections = figma.variables.getLocalVariableCollections();
-  let iconsCollection = collections.find(c => c.name === collectionName);
-
-  if (!iconsCollection) {
-    const seenIds = new Set();
-    const stack = [...selection];
-    while (stack.length > 0 && !iconsCollection) {
-      const node = stack.pop();
-      if (node.boundVariables) {
-        for (const bindings of Object.values(node.boundVariables)) {
-          const list = Array.isArray(bindings) ? bindings : [bindings];
-          for (const b of list) {
-            if (!b || !b.id || seenIds.has(b.id)) continue;
-            seenIds.add(b.id);
-            const v = figma.variables.getVariableById(b.id);
-            if (!v) continue;
-            if (seenIds.has(v.variableCollectionId)) continue;
-            seenIds.add(v.variableCollectionId);
-            const col = figma.variables.getVariableCollectionById(v.variableCollectionId);
-            if (col && col.name === collectionName) { iconsCollection = col; break; }
-          }
-          if (iconsCollection) break;
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (node.boundVariables) {
+      for (const bindings of Object.values(node.boundVariables)) {
+        const list = Array.isArray(bindings) ? bindings : [bindings];
+        for (const b of list) {
+          if (!b || !b.id) continue;
+          const v = figma.variables.getVariableById(b.id);
+          if (!v) continue;
+          if (seenCollectionIds.has(v.variableCollectionId)) continue;
+          seenCollectionIds.add(v.variableCollectionId);
+          const col = figma.variables.getVariableCollectionById(v.variableCollectionId);
+          if (col) detectedCollections.push(col);
         }
       }
-      if (!iconsCollection && 'children' in node) {
-        for (const child of node.children) stack.push(child);
-      }
+    }
+    if ('children' in node) {
+      for (const child of node.children) stack.push(child);
     }
   }
 
-  const darkMode = iconsCollection
-    ? iconsCollection.modes.find(mode => mode.name === modeName)
-    : null;
+  // Also check local collections
+  for (const col of figma.variables.getLocalVariableCollections()) {
+    if (!seenCollectionIds.has(col.id)) {
+      seenCollectionIds.add(col.id);
+      detectedCollections.push(col);
+    }
+  }
+
+  // Find a collection that has a mode with "Dark" in the name
+  let iconsCollection = null;
+  let darkMode = null;
+
+  for (const col of detectedCollections) {
+    const mode = col.modes.find(m => m.name.toLowerCase().includes('dark'));
+    if (mode) {
+      iconsCollection = col;
+      darkMode = mode;
+      break;
+    }
+  }
 
   if (!iconsCollection || !darkMode) {
-    figma.notify(`⚠️ Коллекция «${collectionName}» или мод «${modeName}» не найдены`, { error: true });
+    figma.notify('⚠️ Не найдена коллекция с Dark-модом в выбранных элементах', { error: true });
     return;
   }
+
+  figma.notify(`Коллекция: ${iconsCollection.name} → ${darkMode.name}`);
 
   const frames = [];
   let skipped = 0;
@@ -491,10 +500,14 @@ function validate() {
 
   if (selection.every(node => node.type === 'INSTANCE')) {
     resetSelectionCache(selection);
+    const widths = selection.slice(0, 4).map(n => Math.round(n.width));
+    const sizeLabel = matchSizeSet(widths);
+    const rowCount = Math.ceil(selection.length / 5);
     postUiMessageDedup({
       type: 'sprites-ready',
-      message: `Будет создано ${selection.length} ${spriteWord(selection.length)}`,
       count: selection.length,
+      rowCount,
+      sizeLabel: sizeLabel || 'unknown',
     });
     return;
   }
@@ -508,11 +521,11 @@ function validate() {
     return;
   }
 
-  if (!selection.every(node => node.type === 'COMPONENT')) {
+  if (!selection.every(node => node.type === 'COMPONENT' || node.type === 'FRAME')) {
     resetSelectionCache(selection);
     postUiMessageDedup({
       type: 'error',
-      message: 'Для переименования все выбранные элементы должны быть мейн-компонентами.\n\nДля «Создать спрайты» используйте отдельную кнопку и выделяйте инстансы (INSTANCE).',
+      message: 'Для переименования все выбранные элементы должны быть компонентами или фреймами.\n\nДля «Создать спрайты» используйте отдельную кнопку и выделяйте инстансы (INSTANCE).',
     });
     return;
   }
@@ -534,13 +547,14 @@ function validate() {
       rowCount: analysis.rowCount,
       rowPreviews: analysis.rowInfos.map(item => item.iconName),
       widths: analysis.widths,
+      pageName: figma.currentPage.name,
     });
     return;
   }
 
   postUiMessageDedup({
     type: 'loading',
-    message: `Считаю ${selection.length} компонентов и ищу .status...`,
+    message: `Считаю ${selection.length} элементов и ищу .status...`,
   });
 
   validateWorkTimer = setTimeout(() => {
@@ -569,6 +583,7 @@ function validate() {
       rowCount: analysis.rowCount,
       rowPreviews: analysis.rowInfos.map(item => item.iconName),
       widths: analysis.widths,
+      pageName: figma.currentPage.name,
     });
   }, 0);
 }
@@ -593,7 +608,7 @@ validate();
 
 figma.ui.onmessage = async (msg) => {
   if (msg.type === 'wrap') {
-    runWrapInAutolayout(msg.collectionName, msg.modeName);
+    runWrapInAutolayout();
     return;
   }
 
@@ -602,7 +617,7 @@ figma.ui.onmessage = async (msg) => {
     const selection = figma.currentPage.selection;
 
     if (selection.length === 0 || selection.length % 4 !== 0) {
-      figma.notify('Выберите компоненты кратно 4', { error: true });
+      figma.notify('Выберите элементы кратно 4', { error: true });
       return;
     }
 
@@ -623,6 +638,14 @@ figma.ui.onmessage = async (msg) => {
     for (const rowInfo of analysis.rowInfos) {
       const row = rowInfo.row;
       const name = rowInfo.iconName;
+
+      // Convert frames to components
+      for (let i = 0; i < row.length; i++) {
+        if (row[i].type === 'FRAME') {
+          const comp = figma.createComponentFromNode(row[i]);
+          row[i] = comp;
+        }
+      }
 
       // Строим имена 1x…1.75x
       const names = SCALES.map(scale => {
